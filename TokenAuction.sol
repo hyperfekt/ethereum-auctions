@@ -26,6 +26,7 @@ contract TokenAuction {
     Bid public highestBid;
     AuctionStatus public status;
     bool public finalized;
+    bool public bidReceived;
 
     event AuctionStarted(address token, uint amount);
     event HighestBidIncreased(address bidder, uint96 amount);
@@ -95,6 +96,7 @@ contract TokenAuction {
         uint96 amount = pendingReturns[msg.sender];
         pendingReturns[msg.sender] = 0;
 
+
         msg.sender.transfer(amount);
     }
 
@@ -111,6 +113,7 @@ contract TokenAuction {
     function receiveBid() external {
         require(msg.sender == beneficiary);
         require(ended());
+        require(!bidReceived);
 
 
         if (!finalized) {
@@ -118,6 +121,8 @@ contract TokenAuction {
             AuctionFinalized(highestBid.bidder, highestBid.amount);
         }
         
+        bidReceived = true;
+
 
         beneficiary.transfer(highestBid.amount);
     }
@@ -158,9 +163,11 @@ contract TokenAuction {
         uint amount = token.balanceOf(this);
         require(amount != 0);
 
+
         if (token == auctionedToken && status.started) {
             status.started = false;
         }
+
 
         token.transfer(beneficiary, amount);
     }
