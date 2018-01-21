@@ -1,11 +1,11 @@
-// This implements the ERC20 token standard minus the allowance feature for a single indivisible token.
+// This implements the ERC179 token standard a single indivisible token.
 
 pragma solidity ^0.4.18;
 
-import "./EIP20NoAllowanceInterface.sol";
+import "./ERC179Interface.sol";
 
 
-contract SingleToken is EIP20Interface {
+contract SingleToken is ERC179Interface {
     address public owner;
     
     string public name;
@@ -18,11 +18,13 @@ contract SingleToken is EIP20Interface {
     ) public 
     {
         owner = msg.sender;               // Give the creator the initial tokens
-        totalSupply = 1;                  // Update total supply
         name = _tokenName;                // Set the name for display purposes
         symbol = _tokenSymbol;            // Set the symbol for display purposes
     }
     
+    function totalSupply() public view returns (uint256) {
+        return 1;
+    }
 
     function transfer(address _to, uint256 _value) public returns (bool success) {
         require(_value == 1);
@@ -41,7 +43,7 @@ contract SingleToken is EIP20Interface {
         return true;
     }
 
-    function balanceOf(address _owner) public view returns (uint256 balance) {
+    function balanceOf(address _owner) public view returns (uint256) {
         if (_owner == owner) {
             return 1;
         } else {
