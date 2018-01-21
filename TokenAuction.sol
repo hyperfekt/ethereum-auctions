@@ -31,6 +31,7 @@ contract TokenAuction {
     event AuctionStarted(address token, uint amount);
     event HighestBidIncreased(address bidder, uint96 amount);
     event AuctionFinalized(address winner, uint winningBid);
+    event AuctionAborted();
 
     /// Prepare an auction for `_amount` of the ERC20 token at `_token` with minimum increments of `_fixedIncrement` or current bid / `_fractionalIncrement`, whichever is greater, ending at epoch `_endTime` or `_extendBlocks` blocks after the last bid (both inclusive, whichever comes last, choose a sufficient number of blocks to decrease the chance of miner frontrunning) . Call start() after transferring the tokens to the auction's address.
     function TokenAuction(
@@ -166,6 +167,7 @@ contract TokenAuction {
 
         if (token == auctionedToken && status.started) {
             status.started = false;
+            AuctionAborted();
         }
 
 
