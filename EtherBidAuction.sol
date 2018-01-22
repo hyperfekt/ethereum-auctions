@@ -9,7 +9,7 @@ contract EtherBidAuction is Auction {
         uint96 amount;
     }
 
-    Bid private maximumBid;
+    Bid internal maximumBid;
     
 
     function EtherBidAuction(
@@ -26,7 +26,7 @@ contract EtherBidAuction is Auction {
     }
 
     // Transfers a bid.
-    function untrustedTransferBid(address receiver, uint256 amount) private {
+    function untrustedTransferBid(address receiver, uint256 amount) internal {
         receiver.transfer(amount);
     }
 

@@ -17,14 +17,13 @@ contract TokenBidAuction is Auction {
         require(token().totalSupply() <= maximumTokenSupply());
     }
  
-    /// Increase your bid on the auction by `amount`. You can withdraw your bid once you are outbid. Make sure the auction has a sufficient allowance to withdraw the tokens. Mind that this transaction might take a while to be included, so bid early and high enough. Higher gas prices can alleviate but not fully avoid this. Successful bid costs ~40000 gas, unsuccessful ~2000 gas before transaction costs.
     function increaseBid(uint amount) external {
         token().transferFrom(msg.sender, this, amount);
         registerBid(amount);
     }
 
     // Transfers a bid.
-    function untrustedTransferBid(address receiver, uint256 amount) private {
+    function untrustedTransferBid(address receiver, uint256 amount) internal {
         token().transfer(receiver, amount);
     }
 

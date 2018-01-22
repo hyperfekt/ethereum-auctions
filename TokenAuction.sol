@@ -23,7 +23,7 @@ contract TokenAuction is Auction {
         auctionedAmount = _amount;
     }
 
-    function transferItem(address receiver) private {
+    function untrustedTransferItem(address receiver) internal {
         auctionedToken.transfer(receiver, auctionedAmount);
     }
 
@@ -31,11 +31,11 @@ contract TokenAuction is Auction {
         return auctionedToken.balanceOf(this) == auctionedAmount;
     }
 
-    function logStart() private {
+    function logStart() internal {
         AuctionStarted(auctionedToken, auctionedAmount);
     }
 
-    function returnItem(address receiver) private {
+    function untrustedReturnItem(address receiver) internal {
         auctionedToken.transfer(receiver, auctionedToken.balanceOf(this));
     }
 }

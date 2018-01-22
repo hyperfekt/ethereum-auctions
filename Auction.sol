@@ -11,9 +11,6 @@ contract Auction {
         bool started;
     }
 
-
-    event AuctionStarted;
-
     address public beneficiary;
     
     mapping(address => uint256) public pendingReturns;
@@ -72,7 +69,7 @@ contract Auction {
         }
     }
 
-    function max(uint256 a, uint256 b) private pure returns (uint256) {
+    function max(uint256 a, uint256 b) internal pure returns (uint256) {
         if (a > b) {
             return a;
         } else {
@@ -125,7 +122,7 @@ contract Auction {
         untrustedTransferItem(highestBidder());
     }
 
-    function finalize() private {
+    function finalize() internal {
         if (!finalized) {
             finalized = true;
             AuctionFinalized(highestBidder(), highestBid());
@@ -169,17 +166,17 @@ contract Auction {
     function highestBid() public view returns (uint256);
 
     // Transfers a bid.
-    function untrustedTransferBid(address receiver, uint256 amount) private;
+    function untrustedTransferBid(address receiver, uint256 amount) internal;
 
     // Transfers the auctioned item.
-    function untrustedTransferItem(address receiver) private;
+    function untrustedTransferItem(address receiver) internal;
 
     // Checks the auction contract possesses the auctioned item.
     function funded() public view returns (bool);
 
     // Logs the start of the auction to the chain via AuctionStarted.
-    function logStart() private;
+    function logStart() internal;
 
     // Transfers the auctioned item back to the beneficary.
-    function untrustedReturnItem(address receiver) private;
+    function untrustedReturnItem(address receiver) internal;
 }
