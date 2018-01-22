@@ -3,9 +3,9 @@ pragma solidity ^0.4.18;
 import "./EIP821/IAssetRegistry.sol";
 import "./EIP821/IAssetHolder.sol";
 import "./EIP820/EIP820.sol";
-import "./EtherAuction.sol";
+import "./Auction.sol";
 
-contract NFTAuction is EtherAuction, EIP820, IAssetHolder {
+contract NFTAuction is Auction, EIP820, IAssetHolder {
 
     event AuctionStarted(address registry, uint256 id);
 
@@ -20,7 +20,7 @@ contract NFTAuction is EtherAuction, EIP820, IAssetHolder {
         uint32 _extendBlocks,
         uint80 _fixedIncrement,
         uint24 _fractionalIncrement
-    ) public EtherAuction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement)
+    ) public Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement)
     {
         assetRegistry = IAssetRegistry(_assetRegistry);
         assetId = _assetId;
@@ -40,7 +40,7 @@ contract NFTAuction is EtherAuction, EIP820, IAssetHolder {
     }
 
     function returnItem(address receiver) private {
-        assetRegistry.transfer(receiver, assetId);
+        transferItem(receiver);
     }
 
     function onAssetReceived(uint256 _assetId, address, address, bytes, address, bytes) public {

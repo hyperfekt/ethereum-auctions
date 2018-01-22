@@ -1,11 +1,6 @@
 pragma solidity ^0.4.18;
 
-contract EtherAuction {
-
-    struct Bid {
-        address bidder;
-        uint96 amount;
-    }
+contract Auction {
 
     struct AuctionStatus {
         uint40 endBlock;
@@ -21,18 +16,17 @@ contract EtherAuction {
 
     address public beneficiary;
     
-    mapping(address => uint96) private pendingReturns;
-    Bid public highestBid;
+    mapping(address => uint256) public pendingReturns;
     AuctionStatus public status;
     bool public finalized;
     bool public bidReceived;
     
-    event HighestBidIncreased(address bidder, uint96 amount);
+    event HighestBidIncreased(address bidder, uint amount);
     event AuctionFinalized(address winner, uint winningBid);
     event AuctionAborted();
 
-    /// Prepare an auction with minimum increments of `_fixedIncrement` or current bid / `_fractionalIncrement`, whichever is greater, ending at epoch `_endTime` or `_extendBlocks` blocks after the last bid (both inclusive, whichever comes last, choose a sufficient number of blocks to decrease the chance of miner frontrunning) . Call start() after transferring the tokens to the auction's address.
-    function EtherAuction(
+    /// Prepare an auction with minimum increments of `_fixedIncrement` wei or current bid / `_fractionalIncrement`, whichever is greater, ending at epoch `_endTime` or `_extendBlocks` blocks after the last bid (both inclusive, whichever comes last, choose a sufficient number of blocks to decrease the chance of miner frontrunning) . Call start() after transferring the tokens to the auction's address.
+    function Auction(
         uint40 _endTime,
         uint32 _extendBlocks,
         uint80 _fixedIncrement,
@@ -46,39 +40,40 @@ contract EtherAuction {
         beneficiary = msg.sender;
     }
 
-    /// Increase your bid on the auction by the value sent together with this transaction. You can withdraw your bid once you are outbid. Mind that this transaction might take a while to be included, so bid early and high enough. Higher gas prices can alleviate but not fully avoid this. Successful bid costs ~40000 gas, unsuccessful ~2000 gas before transaction costs.
-    function increaseBid() external payable {
-        require(status.started && !ended());
-        
-        if (msg.sender == highestBid.bidder) {
-            require(uint96(msg.value) >= currentIncrement());
-
-
-            highestBid.amount += uint96(msg.value);
+    function registerBid(uint256 amount) internal {
+        uint256 newbid;
+        if (msg.sender == highestBidder()) {
+            newbid = highestBid() + amount;
         } else {
-            uint96 unreturned = pendingReturns[msg.sender];
-            uint96 newbid = uint96(msg.value)+unreturned;
-            require(newbid > highestBid.amount && newbid >= highestBid.amount + currentIncrement());
-
+            uint256 unreturned = pendingReturns[msg.sender];
+            newbid = unreturned + amount;
 
             pendingReturns[msg.sender] = 0;
-            pendingReturns[highestBid.bidder] = highestBid.amount;
-            highestBid.bidder = msg.sender;
-            highestBid.amount = newbid;
-            status.endBlock = uint40(block.number) + status.endExtension;
+            pendingReturns[highestBidder()] = highestBid();
         }
-        HighestBidIncreased(highestBid.bidder, highestBid.amount);
+        require(validBid(newbid));
+        newHighestBid(msg.sender, newbid);
     }
 
-    function currentIncrement() public view returns (uint96) {
+    function newHighestBid(address bidder, uint256 amount) internal {
+        setHighestBid(bidder, amount);
+        status.endBlock = uint40(block.number) + status.endExtension;
+        HighestBidIncreased(bidder, amount);
+    }
+
+    function validBid(uint256 amount) public view returns (bool) {
+        return amount >= highestBid() + currentIncrement() && amount > highestBid() && status.started && !ended();
+    }
+
+    function currentIncrement() public view returns (uint256) {
         if (status.fractionalIncrement == 0) {
             return status.fixedIncrement;
         } else {
-            return max(status.fixedIncrement, highestBid.amount / status.fractionalIncrement);
+            return max(status.fixedIncrement, highestBid() / status.fractionalIncrement);
         }
     }
 
-    function max(uint96 a, uint96 b) private pure returns (uint96) {
+    function max(uint256 a, uint256 b) private pure returns (uint256) {
         if (a > b) {
             return a;
         } else {
@@ -86,19 +81,19 @@ contract EtherAuction {
         }
     }
 
-    /// Withdraw your outbid balance from the auction.
+     /// Withdraw your outbid balance from the auction.
     function withdraw() external {
-        uint96 amount = pendingReturns[msg.sender];
+        uint256 amount = pendingReturns[msg.sender];
         pendingReturns[msg.sender] = 0;
 
 
-        msg.sender.transfer(amount);
+        untrustedTransferBid(msg.sender, amount);
     }
 
     /// Get your current bid in the auction.
-    function currentBid() external view returns (uint96) {
-        if (msg.sender == highestBid.bidder) {
-            return highestBid.amount;
+    function currentBid() external view returns (uint256) {
+        if (msg.sender == highestBidder()) {
+            return highestBid();
         } else {
             return pendingReturns[msg.sender];
         }
@@ -111,29 +106,31 @@ contract EtherAuction {
         require(!bidReceived);
 
 
-        if (!finalized) {
-            finalized = true;
-            AuctionFinalized(highestBid.bidder, highestBid.amount);
-        }
+        finalize();
         
         bidReceived = true;
 
 
-        beneficiary.transfer(highestBid.amount);
+        untrustedTransferBid(beneficiary, highestBid());
     }
 
     /// Transfer the won item to the highest bidder.
     function receiveItem() external {
-        require(msg.sender == highestBid.bidder);
+        require(msg.sender == highestBidder());
         require(ended());
 
+        
+        finalize();
 
+
+        untrustedTransferItem(highestBidder());
+    }
+
+    function finalize() private {
         if (!finalized) {
             finalized = true;
-            AuctionFinalized(highestBid.bidder, highestBid.amount);
+            AuctionFinalized(highestBidder(), highestBid());
         }
-
-        transferItem(highestBid.bidder);
     }
 
     function ended() public view returns (bool) {
@@ -149,13 +146,12 @@ contract EtherAuction {
         status.started = true;
         logStart();
     }
-
     
 
     /// Return tokens mistakenly sent to the auction.
     function abort() external {
         require(msg.sender == beneficiary);
-        require(!status.started || highestBid.amount == 0);
+        require(!status.started || highestBid() == 0);
 
 
         if (status.started) {
@@ -164,11 +160,20 @@ contract EtherAuction {
         }
 
 
-        returnItem(beneficiary);
+        untrustedReturnItem(beneficiary);
     }
 
-    // Transfers the auctioned item to the winning bidder.
-    function transferItem(address receiver) private;
+    function setHighestBid(address bidder, uint256 amount) internal;
+
+    function highestBidder() public view returns (address);
+
+    function highestBid() public view returns (uint256);
+
+    // Transfers a bid.
+    function untrustedTransferBid(address receiver, uint256 amount) private;
+
+    // Transfers the auctioned item.
+    function untrustedTransferItem(address receiver) private;
 
     // Checks the auction contract possesses the auctioned item.
     function funded() public view returns (bool);
@@ -177,5 +182,5 @@ contract EtherAuction {
     function logStart() private;
 
     // Transfers the auctioned item back to the beneficary.
-    function returnItem(address receiver) private;
+    function untrustedReturnItem(address receiver) private;
 }

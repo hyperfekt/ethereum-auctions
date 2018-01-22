@@ -1,11 +1,11 @@
 pragma solidity ^0.4.18;
 
 import "./EIP179/ERC179Interface.sol";
-import "./EtherAuction.sol";
+import "./Auction.sol";
 
-contract TokenAuction is EtherAuction {
+contract TokenAuction is Auction {
 
-    event AuctionStarted(address token, uint amount);
+    event AuctionStarted(ERC179Interface token, uint amount);
 
     ERC179Interface public auctionedToken;
     uint public auctionedAmount;
@@ -18,7 +18,7 @@ contract TokenAuction is EtherAuction {
         uint32 _extendBlocks,
         uint80 _fixedIncrement,
         uint24 _fractionalIncrement
-    ) public EtherAuction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement)
+    ) public Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement)
     {
         auctionedToken = ERC179Interface(_token);
         auctionedAmount = _amount;

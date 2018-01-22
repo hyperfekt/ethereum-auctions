@@ -1,3 +1,5 @@
+pragma solidity ^0.4.18;
+
 interface IAssetHolder {
   function onAssetReceived(
     /* address _assetRegistry == msg.sender */

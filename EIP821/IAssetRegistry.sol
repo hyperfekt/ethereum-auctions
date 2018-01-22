@@ -1,3 +1,5 @@
+pragma solidity ^0.4.18;
+
 interface IAssetRegistry {
   function name() public view returns (string);
   function symbol() public view returns (string);
