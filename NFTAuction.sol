@@ -12,7 +12,6 @@ contract NFTAuction is Auction, EIP820, IAssetHolder {
     IAssetRegistry public assetRegistry;
     uint256 public assetId;
 
-    /// Prepare an auction for asset with ID `_assetId` on the ERC821 registry at `_assetRegistry` with minimum increments of `_fixedIncrement` or current bid / `_fractionalIncrement`, whichever is greater, ending at epoch `_endTime` or `_extendBlocks` blocks after the last bid (both inclusive, whichever comes last, choose a sufficient number of blocks to decrease the chance of miner frontrunning) . Call start() after transferring the tokens to the auction's address.
     function NFTAuction(
         address _assetRegistry,
         uint256 _assetId,

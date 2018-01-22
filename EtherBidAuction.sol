@@ -21,7 +21,6 @@ contract EtherBidAuction is Auction {
     {
     }
  
-    /// Increase your bid on the auction by the value sent together with this transaction. You can withdraw your bid once you are outbid. Mind that this transaction might take a while to be included, so bid early and high enough. Higher gas prices can alleviate but not fully avoid this. Successful bid costs ~40000 gas, unsuccessful ~2000 gas before transaction costs.
     function increaseBid() external payable {
         registerBid(msg.value);
     }

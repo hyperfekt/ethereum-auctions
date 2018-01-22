@@ -25,7 +25,6 @@ contract Auction {
     event AuctionFinalized(address winner, uint winningBid);
     event AuctionAborted();
 
-    /// Prepare an auction with minimum increments of `_fixedIncrement` wei or current bid / `_fractionalIncrement`, whichever is greater, ending at epoch `_endTime` or `_extendBlocks` blocks after the last bid (both inclusive, whichever comes last, choose a sufficient number of blocks to decrease the chance of miner frontrunning) . Call start() after transferring the tokens to the auction's address.
     function Auction(
         uint40 _endTime,
         uint32 _extendBlocks,
