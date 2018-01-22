@@ -1,6 +1,7 @@
 pragma solidity ^0.4.18;
 
 import "./EIP721+821/NFTRegistry.sol";
+import "./EIP721/ERC721.sol";
 import "./EIP821/IAssetHolder.sol";
 import "./EIP821/IAssetRegistry.sol";
 import "./EIP820/EIP820.sol";
@@ -36,7 +37,7 @@ contract NFTAuction is Auction, EIP820, IAssetHolder {
         if (registryImplementer != 0) {
             return this == IAssetRegistry(registryImplementer).holderOf(assetId);
         } else {
-            return this == assetRegistry.ownerOf(assetId);
+            return this == ERC721(assetRegistry).ownerOf(assetId);
         }
     }
 
