@@ -2,6 +2,7 @@ pragma solidity ^0.4.18;
 
 import "./EIP721+821/NFTRegistry.sol";
 import "./EIP821/IAssetHolder.sol";
+import "./EIP821/IAssetRegistry.sol";
 import "./EIP820/EIP820.sol";
 import "./Auction.sol";
 
@@ -31,7 +32,12 @@ contract NFTAuction is Auction, EIP820, IAssetHolder {
     }
 
     function funded() public view returns (bool) {
-        return this == assetRegistry.holderOf(assetId) || this == assetRegistry.ownerOf(assetId); // can this work? little information out there, apparently if nothing is returned the value that was in that memory before is used as return value
+        address registryImplementer = interfaceAddr(assetRegistry, "IAssetRegistry");
+        if (registryImplementer != 0) {
+            return this == IAssetRegistry(registryImplementer).holderOf(assetId);
+        } else {
+            return this == assetRegistry.ownerOf(assetId);
+        }
     }
 
     function logStart() internal {
