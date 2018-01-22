@@ -1,6 +1,6 @@
 pragma solidity ^0.4.18;
 
-import "./ERC179Interface.sol";
+import "./EIP179/ERC179Interface.sol";
 import "./EtherAuction.sol";
 
 contract TokenAuction is EtherAuction {

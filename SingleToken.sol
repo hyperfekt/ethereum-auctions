@@ -2,7 +2,7 @@
 
 pragma solidity ^0.4.18;
 
-import "./ERC179Interface.sol";
+import "./EIP179/ERC179Interface.sol";
 
 
 contract SingleToken is ERC179Interface {
