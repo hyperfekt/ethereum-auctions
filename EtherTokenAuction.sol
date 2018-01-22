@@ -12,7 +12,7 @@ contract EtherTokenAuction is EtherBidAuction, TokenAuction {
         uint32 _extendBlocks,
         uint80 _fixedIncrement,
         uint24 _fractionalIncrement
-    ) public TokenAuction(_token, _amount, _endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement)
+    ) public EtherBidAuction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement) TokenAuction(_token, _amount, _endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement)
     {
     }
 }
