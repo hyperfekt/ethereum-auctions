@@ -9,7 +9,6 @@ contract SingleToken is ERC179Interface {
     address public owner;
     
     string public name;
-    uint8 public decimals = 0;
     string public symbol;
 
     function SingleToken(
@@ -21,26 +20,13 @@ contract SingleToken is ERC179Interface {
         name = _tokenName;                // Set the name for display purposes
         symbol = _tokenSymbol;            // Set the symbol for display purposes
     }
+
+    function decimals() public view returns (uint8) {
+        return 0;
+    }
     
     function totalSupply() public view returns (uint256) {
         return 1;
-    }
-
-    function transfer(address _to, uint256 _value) public returns (bool success) {
-        require(_value == 1);
-
-
-        return transfer(_to);
-    }
-    function transfer(address _to) public returns (bool success) {
-        require(msg.sender == owner);
-
-        owner = _to;
-
-        Transfer(msg.sender, _to, 1);
-
-
-        return true;
     }
 
     function balanceOf(address _owner) public view returns (uint256) {
@@ -49,5 +35,17 @@ contract SingleToken is ERC179Interface {
         } else {
             return 0;
         }
+    }
+
+    function transfer(address _to, uint256 _value) public returns (bool success) {
+        require(_value <= balanceOf(msg.sender));
+
+        if (_value == 1) {
+            owner = _to;
+        }
+
+        Transfer(msg.sender, _to, _value);
+
+        return true;
     }
 }
