@@ -33,4 +33,8 @@ contract TwentyFourByteTokenBidAuction is TokenBidAuction {
     function setToken(address _token) internal {
         maximumBid.token = ERC20Interface(_token);
     }
+
+    function maximumTokenSupply() public pure returns (uint) {
+        return 2^192-1;
+    }
 }
