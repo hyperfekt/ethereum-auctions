@@ -1,5 +1,9 @@
 pragma solidity ^0.4.18;
 
+import "./EIP179/ERC179Interface.sol";
+import "./EIP721+821/NFTRegistry.sol";
+import "./EIP20/ERC20Interface.sol";
+
 contract Auction {
 
     struct AuctionStatus {
@@ -144,20 +148,48 @@ contract Auction {
     }
     
 
-    /// Return tokens mistakenly sent to the auction.
+    /// Abort the auction.
     function abort() external {
         require(msg.sender == beneficiary);
-        require(!status.started || highestBid() == 0);
-
-
-        if (status.started) {
-            status.started = false;
-            AuctionAborted();
-        }
-
-
-        untrustedReturnItem(beneficiary);
+        require(status.started && highestBid() == 0);
+        
+        
+        status.started = false;
+        AuctionAborted();
     }
+
+    function emptyToken(address token, uint asset) external {
+        require(msg.sender == beneficiary);
+
+        if (untrustedEmptyBid(beneficiary, token)) {
+            if (untrustedTransferExcessAuctioned(beneficiary, token, asset)) {
+                if (token == 0) {
+                    beneficiary.transfer(this.balance);
+                } else if (asset == 0) {
+                    require(ERC179Interface(token).transfer(beneficiary, ERC179Interface(token).balanceOf(this)));
+                } else {
+                    NFTRegistry(token).transfer(beneficiary, asset);
+                }
+            }
+        }
+    }
+
+    function untrustedEmptyBid(address receiver, address token) internal  returns (bool notBid) {
+        if (ERC20Interface(token) == bidToken()) {
+            if (!status.started) {
+                untrustedTransferBid(receiver, bidBalance());
+            }
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    function bidToken() internal view returns (ERC20Interface);
+
+    function bidBalance() internal view returns (uint);
+
+    function untrustedTransferExcessAuctioned(address receiver, address token, uint asset) internal returns (bool notAuctioned);
 
     function setHighestBid(address bidder, uint256 amount) internal;
 
@@ -177,6 +209,4 @@ contract Auction {
     // Logs the start of the auction to the chain via AuctionStarted.
     function logStart() internal;
 
-    // Transfers the auctioned item back to the beneficary.
-    function untrustedReturnItem(address receiver) internal;
 }

@@ -15,5 +15,6 @@ contract TokenTokenAuction is TwentyFourByteTokenBidAuction, TokenAuction {
         uint24 _fractionalIncrement
     ) public TokenAuction(_token, _amount, _endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement) TokenBidAuction(_bidToken, _endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement)
     {
+        require(_bidToken != _token);
     }
 }

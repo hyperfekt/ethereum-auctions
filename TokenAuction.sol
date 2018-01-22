@@ -35,7 +35,16 @@ contract TokenAuction is Auction {
         AuctionStarted(auctionedToken, auctionedAmount);
     }
 
-    function untrustedReturnItem(address receiver) internal {
-        require(auctionedToken.transfer(receiver, auctionedToken.balanceOf(this)));
+    function untrustedTransferExcessAuctioned(address receiver, address token, uint asset) internal returns (bool notAuctioned) {
+        if (ERC179Interface(token) == auctionedToken) {
+            uint transferAmount = auctionedToken.balanceOf(this) - auctionedAmount;
+            if (status.started) {
+                transferAmount -= auctionedAmount;
+            }
+            auctionedToken.transfer(receiver, transferAmount);
+            return false;
+        } else {
+            return true;
+        }
     }
 }

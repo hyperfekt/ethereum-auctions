@@ -26,11 +26,11 @@ contract TwentyFourByteTokenBidAuction is TokenBidAuction {
         return maximumBid.amount;
     }
 
-    function token() public view returns (ERC20Interface) {
+    function bidToken() internal view returns (ERC20Interface) {
         return maximumBid.token;
     }
 
-    function setToken(address _token) internal {
+    function setBidToken(address _token) internal {
         maximumBid.token = ERC20Interface(_token);
     }
 

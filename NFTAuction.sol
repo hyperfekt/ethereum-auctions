@@ -45,8 +45,15 @@ contract NFTAuction is Auction, EIP820, IAssetHolder {
         AuctionStarted(assetRegistry, assetId);
     }
 
-    function untrustedReturnItem(address receiver) internal {
-        untrustedTransferItem(receiver);
+    function untrustedTransferExcessAuctioned(address receiver, address registry, uint asset) internal returns (bool notAuctioned) {
+        if (NFTRegistry(registry) == assetRegistry && asset == assetId) {
+            if (!status.started) {
+                assetRegistry.transfer(receiver, assetId);
+            }
+            return false;
+        } else {
+            return true;
+        }
     }
 
     function onAssetReceived(uint256 _assetId, address, address, bytes, address, bytes) public {

@@ -42,4 +42,13 @@ contract EtherBidAuction is Auction {
     function highestBid() public view returns (uint256) {
         return maximumBid.amount;
     }
+
+    function bidToken() internal view returns (ERC20Interface) {
+        return ERC20Interface(0);
+    }
+
+    function bidBalance() internal view returns (uint) {
+        return this.balance;
+    }
+    
 }

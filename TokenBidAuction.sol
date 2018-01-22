@@ -13,23 +13,25 @@ contract TokenBidAuction is Auction {
         uint24 _fractionalIncrement
     ) public Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement)
     {
-        setToken(_token);
-        require(token().totalSupply() <= maximumTokenSupply());
+        setBidToken(_token);
+        require(bidToken().totalSupply() <= maximumTokenSupply());
     }
  
     function increaseBid(uint amount) external {
-        require(token().transferFrom(msg.sender, this, amount));
+        require(bidToken().transferFrom(msg.sender, this, amount));
         registerBid(amount);
     }
 
     // Transfers a bid.
     function untrustedTransferBid(address receiver, uint256 amount) internal {
-        require(token().transfer(receiver, amount));
+        require(bidToken().transfer(receiver, amount));
     }
 
-    function token() public view returns (ERC20Interface);
+    function bidBalance() internal view returns (uint) {
+        return bidToken().balanceOf(this);
+    }
 
-    function setToken(address _token) internal;
+    function setBidToken(address _token) internal;
 
     function maximumTokenSupply() public pure returns (uint);
 }
