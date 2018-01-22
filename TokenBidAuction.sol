@@ -18,13 +18,13 @@ contract TokenBidAuction is Auction {
     }
  
     function increaseBid(uint amount) external {
-        token().transferFrom(msg.sender, this, amount);
+        require(token().transferFrom(msg.sender, this, amount));
         registerBid(amount);
     }
 
     // Transfers a bid.
     function untrustedTransferBid(address receiver, uint256 amount) internal {
-        token().transfer(receiver, amount);
+        require(token().transfer(receiver, amount));
     }
 
     function token() public view returns (ERC20Interface);

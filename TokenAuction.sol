@@ -24,7 +24,7 @@ contract TokenAuction is Auction {
     }
 
     function untrustedTransferItem(address receiver) internal {
-        auctionedToken.transfer(receiver, auctionedAmount);
+        require(auctionedToken.transfer(receiver, auctionedAmount));
     }
 
     function funded() public view returns (bool) {
@@ -36,6 +36,6 @@ contract TokenAuction is Auction {
     }
 
     function untrustedReturnItem(address receiver) internal {
-        auctionedToken.transfer(receiver, auctionedToken.balanceOf(this));
+        require(auctionedToken.transfer(receiver, auctionedToken.balanceOf(this)));
     }
 }
