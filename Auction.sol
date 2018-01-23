@@ -3,8 +3,12 @@ pragma solidity ^0.4.18;
 import "./EIP179/ERC179Interface.sol";
 import "./EIP721+821/NFTRegistry.sol";
 import "./EIP20/ERC20Interface.sol";
+import "./EIP820/EIP820.sol";
+import "./EIP777/ITokenRecipient.sol";
+import "./EIP777/EIP777.sol";
+import "./EIP821/IAssetHolder.sol";
 
-contract Auction {
+contract Auction is EIP820, ITokenRecipient, IAssetHolder {
 
     struct AuctionStatus {
         uint40 endBlock;
@@ -13,6 +17,7 @@ contract Auction {
         uint80 fixedIncrement;
         uint24 fractionalIncrement;
         bool started;
+        bool selfInitiatedTransfer;
     }
 
     address public beneficiary;
@@ -38,21 +43,23 @@ contract Auction {
         status.fixedIncrement = _fixedIncrement;
         status.fractionalIncrement = _fractionalIncrement;
         beneficiary = msg.sender;
+
+        setInterfaceImplementation("ITokenRecipient", this);
     }
 
-    function registerBid(uint256 amount) internal {
+    function registerBid(address source, uint256 amount) internal {
         uint256 newbid;
-        if (msg.sender == highestBidder()) {
+        if (source == highestBidder()) {
             newbid = highestBid() + amount;
         } else {
-            uint256 unreturned = pendingReturns[msg.sender];
+            uint256 unreturned = pendingReturns[source];
             newbid = unreturned + amount;
 
-            pendingReturns[msg.sender] = 0;
+            pendingReturns[source] = 0;
             pendingReturns[highestBidder()] = highestBid();
         }
         require(validBid(newbid));
-        newHighestBid(msg.sender, newbid);
+        newHighestBid(source, newbid);
     }
 
     function newHighestBid(address bidder, uint256 amount) internal {
@@ -183,6 +190,35 @@ contract Auction {
         } else {
             return true;
         }
+    }
+
+    function onAssetReceived(uint256, address, address, bytes, address, bytes) public {
+        require(false);
+    }
+
+    function tokensReceived(address from, address to, uint amount, bytes, address, bytes) public {
+        require(Auction(to) == this);
+
+        if (from == beneficiary) {
+            require(incomingFunds(EIP777(msg.sender), amount));
+        } else {
+            require(incomingBid(EIP777(msg.sender), from, amount));
+        }
+    }
+
+    function incomingBid(EIP777 token, address source, uint amount) internal returns (bool accepted) {
+        if (token == EIP777(bidToken())) {
+            if (!status.selfInitiatedTransfer) {
+                registerBid(source, amount);
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    function incomingFunds(EIP777, uint) internal returns (bool accepted) {
+        return false;
     }
 
     function bidToken() internal view returns (ERC20Interface);

@@ -35,7 +35,7 @@ contract TokenAuction is Auction {
         AuctionStarted(auctionedToken, auctionedAmount);
     }
 
-    function untrustedTransferExcessAuctioned(address receiver, address token, uint asset) internal returns (bool notAuctioned) {
+    function untrustedTransferExcessAuctioned(address receiver, address token, uint) internal returns (bool notAuctioned) {
         if (ERC179Interface(token) == auctionedToken) {
             uint transferAmount = auctionedToken.balanceOf(this) - auctionedAmount;
             if (status.started) {
@@ -45,6 +45,12 @@ contract TokenAuction is Auction {
             return false;
         } else {
             return true;
+        }
+    }
+
+    function incomingFunds(EIP777 token, uint amount) internal returns (bool accepted) {
+        if (token == EIP777(auctionedToken)) {
+            return amount == auctionedAmount;
         }
     }
 }

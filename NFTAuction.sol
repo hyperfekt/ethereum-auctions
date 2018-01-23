@@ -2,12 +2,10 @@ pragma solidity ^0.4.18;
 
 import "./EIP721+821/NFTRegistry.sol";
 import "./EIP721/ERC721.sol";
-import "./EIP821/IAssetHolder.sol";
 import "./EIP821/IAssetRegistry.sol";
-import "./EIP820/EIP820.sol";
 import "./Auction.sol";
 
-contract NFTAuction is Auction, EIP820, IAssetHolder {
+contract NFTAuction is Auction {
 
     event AuctionStarted(address registry, uint256 id);
 
@@ -56,7 +54,9 @@ contract NFTAuction is Auction, EIP820, IAssetHolder {
         }
     }
 
-    function onAssetReceived(uint256 _assetId, address, address, bytes, address, bytes) public {
+    function onAssetReceived(uint256 _assetId, address _previousHolder, address _currentHolder, bytes, address, bytes) public {
+        require(this == _currentHolder);
+        require(beneficiary == _previousHolder);
         require(assetRegistry == msg.sender);
         require(assetId == _assetId);
     }

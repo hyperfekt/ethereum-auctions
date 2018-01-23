@@ -3,6 +3,7 @@ pragma solidity ^0.4.18;
 import "./Auction.sol";
 import "./EIP20/ERC20Interface.sol";
 
+
 contract TokenBidAuction is Auction {
 
     function TokenBidAuction(
@@ -18,8 +19,9 @@ contract TokenBidAuction is Auction {
     }
  
     function increaseBid(uint amount) external {
+        status.selfInitiatedTransfer = true;
         require(bidToken().transferFrom(msg.sender, this, amount));
-        registerBid(amount);
+        status.selfInitiatedTransfer = false;
     }
 
     // Transfers a bid.

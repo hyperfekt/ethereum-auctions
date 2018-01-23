@@ -22,7 +22,7 @@ contract EtherBidAuction is Auction {
     }
  
     function increaseBid() external payable {
-        registerBid(msg.value);
+        registerBid(msg.sender, msg.value);
     }
 
     // Transfers a bid.
