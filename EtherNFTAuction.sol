@@ -11,8 +11,9 @@ contract EtherNFTAuction is NFTAuction, EtherBidAuction {
         uint40 _endTime,
         uint32 _extendBlocks,
         uint80 _fixedIncrement,
-        uint24 _fractionalIncrement
-    ) public EtherBidAuction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement) NFTAuction(_assetRegistry, _assetId, _endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement)
+        uint24 _fractionalIncrement,
+        uint _reservePrice
+    ) public NFTAuction(_assetRegistry, _assetId) Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement, _reservePrice)
     {
     }
 }

@@ -1,6 +1,6 @@
 pragma solidity ^0.4.18;
 
-import "./EIP179/ERC179Interface.sol";
+import "./interfaces/EIP179/ERC179Interface.sol";
 import "./Auction.sol";
 
 contract TokenAuction is Auction {
@@ -12,12 +12,8 @@ contract TokenAuction is Auction {
 
     function TokenAuction(
         address _token,
-        uint _amount,
-        uint40 _endTime,
-        uint32 _extendBlocks,
-        uint80 _fixedIncrement,
-        uint24 _fractionalIncrement
-    ) public Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement)
+        uint _amount
+    ) public
     {
         auctionedToken = ERC179Interface(_token);
         auctionedAmount = _amount;
@@ -38,7 +34,7 @@ contract TokenAuction is Auction {
     function untrustedTransferExcessAuctioned(address receiver, address token, uint) internal returns (bool notAuctioned) {
         if (ERC179Interface(token) == auctionedToken) {
             uint transferAmount = auctionedToken.balanceOf(this) - auctionedAmount;
-            if (status.started) {
+            if (started()) {
                 transferAmount -= auctionedAmount;
             }
             auctionedToken.transfer(receiver, transferAmount);

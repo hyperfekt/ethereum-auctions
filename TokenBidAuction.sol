@@ -1,7 +1,7 @@
 pragma solidity ^0.4.18;
 
 import "./Auction.sol";
-import "./EIP20/ERC20Interface.sol";
+import "./interfaces/EIP20/ERC20Interface.sol";
 
 
 contract TokenBidAuction is Auction {
@@ -9,21 +9,17 @@ contract TokenBidAuction is Auction {
     ERC20Interface public _bidToken;
 
     function TokenBidAuction(
-        address _token,
-        uint40 _endTime,
-        uint32 _extendBlocks,
-        uint80 _fixedIncrement,
-        uint24 _fractionalIncrement
-    ) public Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement)
+        address _token
+    ) public
     {
         _bidToken = ERC20Interface(_token);
         require(bidToken().totalSupply() <= maximumTokenSupply());
     }
  
     function increaseBid(uint amount) external {
-        status.selfInitiatedTransfer = true;
+        setSelfInitiatedTransfer(true);
         require(bidToken().transferFrom(msg.sender, this, amount));
-        status.selfInitiatedTransfer = false;
+        setSelfInitiatedTransfer(false);
     }
 
     // Transfers a bid.

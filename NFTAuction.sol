@@ -1,8 +1,8 @@
 pragma solidity ^0.4.18;
 
-import "./EIP721+821/NFTRegistry.sol";
-import "./EIP721/ERC721.sol";
-import "./EIP821/IAssetRegistry.sol";
+import "./interfaces/EIP721+821/NFTRegistry.sol";
+import "./interfaces/EIP721/ERC721.sol";
+import "./interfaces/EIP821/IAssetRegistry.sol";
 import "./Auction.sol";
 
 contract NFTAuction is Auction {
@@ -14,12 +14,8 @@ contract NFTAuction is Auction {
 
     function NFTAuction(
         address _assetRegistry,
-        uint256 _assetId,
-        uint40 _endTime,
-        uint32 _extendBlocks,
-        uint80 _fixedIncrement,
-        uint24 _fractionalIncrement
-    ) public Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement)
+        uint256 _assetId
+    ) public
     {
         assetRegistry = NFTRegistry(_assetRegistry);
         assetId = _assetId;
@@ -45,7 +41,7 @@ contract NFTAuction is Auction {
 
     function untrustedTransferExcessAuctioned(address receiver, address registry, uint asset) internal returns (bool notAuctioned) {
         if (NFTRegistry(registry) == assetRegistry && asset == assetId) {
-            if (!status.started) {
+            if (!started()) {
                 assetRegistry.transfer(receiver, assetId);
             }
             return false;

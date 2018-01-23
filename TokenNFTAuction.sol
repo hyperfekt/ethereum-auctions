@@ -13,9 +13,9 @@ contract TokenNFTAuction is TokenBidAuction, TwelveByteBidAuction, NFTAuction {
         uint40 _endTime,
         uint32 _extendBlocks,
         uint80 _fixedIncrement,
-        uint24 _fractionalIncrement
-    ) public NFTAuction(_assetRegistry, _assetId, _endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement) TokenBidAuction(_bidToken, _endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement)
-    TwelveByteBidAuction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement)
+        uint24 _fractionalIncrement,
+        uint _reservePrice
+    ) public NFTAuction(_assetRegistry, _assetId) TokenBidAuction(_bidToken) Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement, _reservePrice)
     {
     }
 }

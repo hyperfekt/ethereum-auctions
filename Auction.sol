@@ -1,31 +1,22 @@
 pragma solidity ^0.4.18;
 
-import "./EIP179/ERC179Interface.sol";
-import "./EIP721+821/NFTRegistry.sol";
-import "./EIP20/ERC20Interface.sol";
-import "./EIP820/EIP820.sol";
-import "./EIP777/ITokenRecipient.sol";
-import "./EIP777/EIP777.sol";
-import "./EIP821/IAssetHolder.sol";
+import "./IAuctionStatus.sol";
+import "./IBid.sol";
+import "./interfaces/EIP179/ERC179Interface.sol";
+import "./interfaces/EIP721+821/NFTRegistry.sol";
+import "./interfaces/EIP20/ERC20Interface.sol";
+import "./interfaces/EIP820/EIP820.sol";
+import "./interfaces/EIP777/ITokenRecipient.sol";
+import "./interfaces/EIP777/EIP777.sol";
+import "./interfaces/EIP821/IAssetHolder.sol";
 
-contract Auction is EIP820, ITokenRecipient, IAssetHolder {
+contract Auction is IAuctionStatus, IBid, EIP820, ITokenRecipient, IAssetHolder {
 
-    struct AuctionStatus {
-        uint40 endBlock;
-        uint40 auctionEnd; //absolute unix timestamp, note that a miner could choose the timestamp to be different from realtime and thus enter bids slightly after this moment. An extension of the auction end by >0 blocks will make that irrelevant.
-        uint32 endExtension; // note that miners can choose to exclude transactions and insert their own, meaning that they can could limit the price and place winning bids by colluding with this many successive other miners.
-        uint80 fixedIncrement;
-        uint24 fractionalIncrement;
-        bool started;
-        bool selfInitiatedTransfer;
-    }
-
+    uint public reservePrice;
     address public beneficiary;
     
     mapping(address => uint256) public pendingReturns;
-    AuctionStatus public status;
     bool public finalized;
-    bool public bidReceived;
     
     event HighestBidIncreased(address bidder, uint amount);
     event AuctionFinalized(address winner, uint winningBid);
@@ -34,14 +25,16 @@ contract Auction is EIP820, ITokenRecipient, IAssetHolder {
     function Auction(
         uint40 _endTime,
         uint32 _extendBlocks,
-        uint80 _fixedIncrement,
-        uint24 _fractionalIncrement
+        uint256 _fixedIncrement,
+        uint24 _fractionalIncrement,
+        uint256 _reservePrice
     ) public
     {
-        status.auctionEnd = _endTime;
-        status.endExtension = _extendBlocks;
-        status.fixedIncrement = _fixedIncrement;
-        status.fractionalIncrement = _fractionalIncrement;
+        setAuctionEnd(_endTime);
+        setEndExtension(_extendBlocks);
+        setFixedIncrement(_fixedIncrement);
+        setFractionalIncrement(_fractionalIncrement);
+        reservePrice = _reservePrice;
         beneficiary = msg.sender;
 
         setInterfaceImplementation("ITokenRecipient", this);
@@ -64,19 +57,19 @@ contract Auction is EIP820, ITokenRecipient, IAssetHolder {
 
     function newHighestBid(address bidder, uint256 amount) internal {
         setHighestBid(bidder, amount);
-        status.endBlock = uint40(block.number) + status.endExtension;
+        setEndBlock(uint40(block.number) + endExtension());
         HighestBidIncreased(bidder, amount);
     }
 
     function validBid(uint256 amount) public view returns (bool) {
-        return amount >= highestBid() + currentIncrement() && amount > highestBid() && status.started && !ended();
+        return amount >= highestBid() + currentIncrement() && amount > highestBid() && started() && !ended();
     }
 
     function currentIncrement() public view returns (uint256) {
-        if (status.fractionalIncrement == 0) {
-            return status.fixedIncrement;
+        if (fractionalIncrement() == 0) {
+            return fixedIncrement();
         } else {
-            return max(status.fixedIncrement, highestBid() / status.fractionalIncrement);
+            return max(fixedIncrement(), highestBid() / fractionalIncrement());
         }
     }
 
@@ -106,51 +99,36 @@ contract Auction is EIP820, ITokenRecipient, IAssetHolder {
         }
     }
 
-    /// Transfer the winning bid to the beneficiary.
-    function receiveBid() external {
+    /// Exchange the auction item and winning bid.
+    function finalize() external {
         require(msg.sender == beneficiary);
         require(ended());
-        require(!bidReceived);
+        require(!finalized);
 
-
-        finalize();
+        finalized = true;
+        AuctionFinalized(highestBidder(), highestBid());
         
-        bidReceived = true;
 
-
-        untrustedTransferBid(beneficiary, highestBid());
-    }
-
-    /// Transfer the won item to the highest bidder.
-    function receiveItem() external {
-        require(msg.sender == highestBidder());
-        require(ended());
-
-        
-        finalize();
-
-
-        untrustedTransferItem(highestBidder());
-    }
-
-    function finalize() internal {
-        if (!finalized) {
-            finalized = true;
-            AuctionFinalized(highestBidder(), highestBid());
+        if (highestBid() >= reservePrice) {
+            untrustedTransferBid(beneficiary, highestBid());
+            untrustedTransferItem(highestBidder());
+        } else {
+            untrustedTransferBid(highestBidder(), highestBid());
+            untrustedTransferItem(beneficiary);
         }
     }
 
     function ended() public view returns (bool) {
-        return block.timestamp > status.auctionEnd && block.number > status.endBlock;
+        return block.timestamp > auctionEnd() && block.number > endBlock();
     }
     
     function start() external {
         require(msg.sender == beneficiary);
         require(funded());
-        require(!status.started);
+        require(!started());
 
 
-        status.started = true;
+        setStarted(true);
         logStart();
     }
     
@@ -158,10 +136,10 @@ contract Auction is EIP820, ITokenRecipient, IAssetHolder {
     /// Abort the auction.
     function abort() external {
         require(msg.sender == beneficiary);
-        require(status.started && highestBid() == 0);
+        require(started() && highestBid() == 0);
         
         
-        status.started = false;
+        setStarted(false);
         AuctionAborted();
     }
 
@@ -183,7 +161,7 @@ contract Auction is EIP820, ITokenRecipient, IAssetHolder {
 
     function untrustedEmptyBid(address receiver, address token) internal  returns (bool notBid) {
         if (ERC20Interface(token) == bidToken()) {
-            if (!status.started) {
+            if (!started()) {
                 untrustedTransferBid(receiver, bidBalance());
             }
             return false;
@@ -199,7 +177,7 @@ contract Auction is EIP820, ITokenRecipient, IAssetHolder {
     function tokensReceived(address from, address to, uint amount, bytes, address, bytes) public {
         require(Auction(to) == this);
 
-        if (status.started) {
+        if (started()) {
             require(incomingBid(EIP777(msg.sender), from, amount));
         } else {
             require(from == beneficiary);
@@ -209,7 +187,7 @@ contract Auction is EIP820, ITokenRecipient, IAssetHolder {
 
     function incomingBid(EIP777 token, address source, uint amount) internal returns (bool accepted) {
         if (token == EIP777(bidToken())) {
-            if (!status.selfInitiatedTransfer) {
+            if (!selfInitiatedTransfer()) {
                 registerBid(source, amount);
             }
             return true;
@@ -227,12 +205,6 @@ contract Auction is EIP820, ITokenRecipient, IAssetHolder {
     function bidBalance() internal view returns (uint);
 
     function untrustedTransferExcessAuctioned(address receiver, address token, uint asset) internal returns (bool notAuctioned);
-
-    function setHighestBid(address bidder, uint256 amount) internal;
-
-    function highestBidder() public view returns (address);
-
-    function highestBid() public view returns (uint256);
 
     // Transfers a bid.
     function untrustedTransferBid(address receiver, uint256 amount) internal;

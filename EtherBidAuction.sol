@@ -4,15 +4,6 @@ import "./TwelveByteBidAuction.sol";
 
 contract EtherBidAuction is TwelveByteBidAuction {
 
-    function EtherBidAuction(
-        uint40 _endTime,
-        uint32 _extendBlocks,
-        uint80 _fixedIncrement,
-        uint24 _fractionalIncrement
-    ) public TwelveByteBidAuction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement)
-    {
-    }
- 
     function increaseBid() external payable {
         registerBid(msg.sender, msg.value);
     }
