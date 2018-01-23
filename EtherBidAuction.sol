@@ -1,23 +1,15 @@
 pragma solidity ^0.4.18;
 
-import "./Auction.sol";
+import "./TwelveByteBidAuction.sol";
 
-contract EtherBidAuction is Auction {
-
-    struct Bid {
-        address bidder;
-        uint96 amount;
-    }
-
-    Bid internal maximumBid;
-    
+contract EtherBidAuction is TwelveByteBidAuction {
 
     function EtherBidAuction(
         uint40 _endTime,
         uint32 _extendBlocks,
         uint80 _fixedIncrement,
         uint24 _fractionalIncrement
-    ) public Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement)
+    ) public TwelveByteBidAuction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement)
     {
     }
  
@@ -30,19 +22,6 @@ contract EtherBidAuction is Auction {
         receiver.transfer(amount);
     }
 
-    function setHighestBid(address bidder, uint256 amount) internal {
-        maximumBid.bidder = bidder;
-        maximumBid.amount = uint96(amount);
-    }
-
-    function highestBidder() public view returns (address) {
-        return maximumBid.bidder;
-    }
-
-    function highestBid() public view returns (uint256) {
-        return maximumBid.amount;
-    }
-
     function bidToken() internal view returns (ERC20Interface) {
         return ERC20Interface(0);
     }
@@ -50,5 +29,4 @@ contract EtherBidAuction is Auction {
     function bidBalance() internal view returns (uint) {
         return this.balance;
     }
-    
 }

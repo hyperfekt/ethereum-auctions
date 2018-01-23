@@ -6,6 +6,8 @@ import "./EIP20/ERC20Interface.sol";
 
 contract TokenBidAuction is Auction {
 
+    ERC20Interface public _bidToken;
+
     function TokenBidAuction(
         address _token,
         uint40 _endTime,
@@ -14,7 +16,7 @@ contract TokenBidAuction is Auction {
         uint24 _fractionalIncrement
     ) public Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement)
     {
-        setBidToken(_token);
+        _bidToken = ERC20Interface(_token);
         require(bidToken().totalSupply() <= maximumTokenSupply());
     }
  
@@ -33,7 +35,9 @@ contract TokenBidAuction is Auction {
         return bidToken().balanceOf(this);
     }
 
-    function setBidToken(address _token) internal;
+    function bidToken() internal view returns (ERC20Interface) {
+        return _bidToken;
+    }
 
     function maximumTokenSupply() public pure returns (uint);
 }

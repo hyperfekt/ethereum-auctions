@@ -1,11 +1,10 @@
 pragma solidity ^0.4.18;
 
-import "./TokenBidAuction.sol";
+import "./Auction.sol";
 
-contract WordTokenBidAuction is TokenBidAuction {
+contract WordBidAuction is Auction {
 
     struct Bid {
-        ERC20Interface token;
         address bidder;
         uint256 amount;
     }
@@ -24,14 +23,6 @@ contract WordTokenBidAuction is TokenBidAuction {
 
     function highestBid() public view returns (uint256) {
         return maximumBid.amount;
-    }
-
-    function bidToken() internal view returns (ERC20Interface) {
-        return maximumBid.token;
-    }
-
-    function setBidToken(address _token) internal {
-        maximumBid.token = ERC20Interface(_token);
     }
 
      function maximumTokenSupply() public pure returns (uint) {

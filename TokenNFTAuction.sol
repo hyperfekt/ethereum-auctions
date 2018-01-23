@@ -1,9 +1,10 @@
 pragma solidity ^0.4.18;
 
-import "./TwentyFourByteTokenBidAuction.sol";
+import "./TwelveByteBidAuction.sol";
 import "./NFTAuction.sol";
+import "./TokenBidAuction.sol";
 
-contract TokenNFTAuction is TwentyFourByteTokenBidAuction, NFTAuction {
+contract TokenNFTAuction is TokenBidAuction, TwelveByteBidAuction, NFTAuction {
     /// Prepare an auction for asset with ID `_assetId` on the registry at `_assetRegistry` in exchange for the ERC20 token at `_bidToken` in minimum increments of `_fixedIncrement` or current bid / `_fractionalIncrement`, whichever is greater, ending at epoch `_endTime` or `_extendBlocks` blocks after the last bid (both inclusive, whichever comes last, choose a sufficient number of blocks to decrease the chance of miner frontrunning) . Call start() after transferring the asset to the auction's address.
     function TokenNFTAuction(
         address _assetRegistry,
@@ -14,6 +15,7 @@ contract TokenNFTAuction is TwentyFourByteTokenBidAuction, NFTAuction {
         uint80 _fixedIncrement,
         uint24 _fractionalIncrement
     ) public NFTAuction(_assetRegistry, _assetId, _endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement) TokenBidAuction(_bidToken, _endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement)
+    TwelveByteBidAuction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement)
     {
     }
 }
