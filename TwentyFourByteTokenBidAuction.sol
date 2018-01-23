@@ -6,8 +6,9 @@ contract TwentyFourByteTokenBidAuction is TokenBidAuction {
 
     struct Bid {
         ERC20Interface token;
+        bytes12 amountA;
+        bytes12 amountB;
         address bidder;
-        uint192 amount;
     }
 
     Bid public maximumBid;
@@ -15,7 +16,9 @@ contract TwentyFourByteTokenBidAuction is TokenBidAuction {
 
     function setHighestBid(address bidder, uint256 amount) internal {
         maximumBid.bidder = bidder;
-        maximumBid.amount = uint192(amount);
+
+        maximumBid.amountA = bytes12(amount);
+        maximumBid.amountB = bytes12(amount >> 96);
     }
 
     function highestBidder() public view returns (address) {
@@ -23,7 +26,11 @@ contract TwentyFourByteTokenBidAuction is TokenBidAuction {
     }
 
     function highestBid() public view returns (uint256) {
-        return maximumBid.amount;
+        uint192 a = uint192(maximumBid.amountA);
+        uint192 b = uint192(maximumBid.amountB);
+        a = a << 96;
+        a = a | b;
+        return uint256(a);
     }
 
     function bidToken() internal view returns (ERC20Interface) {

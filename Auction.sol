@@ -199,10 +199,11 @@ contract Auction is EIP820, ITokenRecipient, IAssetHolder {
     function tokensReceived(address from, address to, uint amount, bytes, address, bytes) public {
         require(Auction(to) == this);
 
-        if (from == beneficiary) {
-            require(incomingFunds(EIP777(msg.sender), amount));
-        } else {
+        if (status.started) {
             require(incomingBid(EIP777(msg.sender), from, amount));
+        } else {
+            require(from == beneficiary);
+            require(incomingFunds(EIP777(msg.sender), amount));
         }
     }
 

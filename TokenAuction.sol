@@ -51,6 +51,8 @@ contract TokenAuction is Auction {
     function incomingFunds(EIP777 token, uint amount) internal returns (bool accepted) {
         if (token == EIP777(auctionedToken)) {
             return amount == auctionedAmount;
+        } else {
+            return false;
         }
     }
 }
