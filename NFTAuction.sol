@@ -7,7 +7,7 @@ import "./Auction.sol";
 
 contract NFTAuction is Auction {
 
-    event AuctionStarted(address registry, uint256 id);
+    event AuctionStarted(ERC20Interface bidToken, NFTRegistry token, uint asset);
 
     NFTRegistry public assetRegistry;
     uint256 public assetId;
@@ -36,7 +36,7 @@ contract NFTAuction is Auction {
     }
 
     function logStart() internal {
-        AuctionStarted(assetRegistry, assetId);
+        AuctionStarted(bidToken(), assetRegistry, assetId);
     }
 
     function untrustedTransferExcessAuctioned(address receiver, address registry, uint asset) internal returns (bool notAuctioned) {

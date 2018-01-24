@@ -25,7 +25,7 @@ contract AuctionFactory {
     }
 
     /// True for the first option, false for the second
-    function createAuctionpublic(
+    function createAuction(
         string bid, 
         string item, 
         string bidsize, 

@@ -5,7 +5,7 @@ import "./Auction.sol";
 
 contract TokenAuction is Auction {
 
-    event AuctionStarted(ERC179Interface token, uint amount);
+    event AuctionStarted(ERC20Interface bidToken, ERC179Interface token, uint amount);
 
     ERC179Interface public auctionedToken;
     uint public auctionedAmount;
@@ -28,7 +28,7 @@ contract TokenAuction is Auction {
     }
 
     function logStart() internal {
-        AuctionStarted(auctionedToken, auctionedAmount);
+        AuctionStarted(bidToken(), auctionedToken, auctionedAmount);
     }
 
     function untrustedTransferExcessAuctioned(address receiver, address token, uint) internal returns (bool notAuctioned) {
