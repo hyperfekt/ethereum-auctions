@@ -13,14 +13,16 @@ contract AuctionFactory {
     uint version = 0;
     uint currentEtherSupply;
     uint fixedInflation;
+    uint fractionalCut;
 
     uint creationDate;
     mapping(string => bool) optionOffered;
     mapping(address => bool) product;
 
-    function AuctionFactory(uint _currentEtherSupply, uint _fixedInflation) public {
+    function AuctionFactory(uint _currentEtherSupply, uint _fixedInflation, uint _fractionalCut) public {
         currentEtherSupply = _currentEtherSupply;
         fixedInflation = _fixedInflation;
+        fractionalCut = _fractionalCut;
         creationDate = now;
     }
 
@@ -43,29 +45,29 @@ contract AuctionFactory {
         if (eqstr(bid,"Ether")) {
             if (eqstr(item,"Token")) {
                 if (eqstr(bidsize,"TwelveByte")) {
-                    auction = new TwelveByteEtherTokenAuction(_token,_amount,_bidToken,_endTime,_extendBlocks,_fixedIncrement,_fractionalIncrement,_reservePrice,expectedSupply(),msg.sender);
+                    auction = new TwelveByteEtherTokenAuction(_token,_amount,_bidToken,_endTime,_extendBlocks,_fixedIncrement,_fractionalIncrement,_reservePrice,expectedSupply(),msg.sender,fractionalCut);
                 } else if (eqstr(bidsize,"Word")) {
-                    auction = new WordEtherTokenAuction(_token,_amount,_bidToken,_endTime,_extendBlocks,_fixedIncrement,_fractionalIncrement,_reservePrice,expectedSupply(),msg.sender);
+                    auction = new WordEtherTokenAuction(_token,_amount,_bidToken,_endTime,_extendBlocks,_fixedIncrement,_fractionalIncrement,_reservePrice,expectedSupply(),msg.sender,fractionalCut);
                 }
             } else if (eqstr(item,"NFT")) {
                 if (eqstr(bidsize,"TwelveByte")) {
-                    auction = new TwelveByteEtherNFTAuction(_token,_amount,_bidToken,_endTime,_extendBlocks,_fixedIncrement,_fractionalIncrement,_reservePrice,expectedSupply(),msg.sender);
+                    auction = new TwelveByteEtherNFTAuction(_token,_amount,_bidToken,_endTime,_extendBlocks,_fixedIncrement,_fractionalIncrement,_reservePrice,expectedSupply(),msg.sender,fractionalCut);
                 } else if (eqstr(bidsize,"Word")) {
-                    auction = new WordEtherTokenAuction(_token,_amount,_bidToken,_endTime,_extendBlocks,_fixedIncrement,_fractionalIncrement,_reservePrice,expectedSupply(),msg.sender);
+                    auction = new WordEtherTokenAuction(_token,_amount,_bidToken,_endTime,_extendBlocks,_fixedIncrement,_fractionalIncrement,_reservePrice,expectedSupply(),msg.sender,fractionalCut);
                 }
             }
         } else if (eqstr(bid,"Token")) {
             if (eqstr(item,"Token")) {
                 if (eqstr(bidsize,"TwelveByte")) {
-                    auction = new TwelveByteTokenTokenAuction(_token,_amount,_bidToken,_endTime,_extendBlocks,_fixedIncrement,_fractionalIncrement,_reservePrice,expectedSupply(),msg.sender);
+                    auction = new TwelveByteTokenTokenAuction(_token,_amount,_bidToken,_endTime,_extendBlocks,_fixedIncrement,_fractionalIncrement,_reservePrice,expectedSupply(),msg.sender,fractionalCut);
                 } else if (eqstr(bidsize,"Word")) {
-                    auction = new WordTokenTokenAuction(_token,_amount,_bidToken,_endTime,_extendBlocks,_fixedIncrement,_fractionalIncrement,_reservePrice,expectedSupply(),msg.sender);
+                    auction = new WordTokenTokenAuction(_token,_amount,_bidToken,_endTime,_extendBlocks,_fixedIncrement,_fractionalIncrement,_reservePrice,expectedSupply(),msg.sender,fractionalCut);
                 }
             } else if (eqstr(item,"NFT")) {
                 if (eqstr(bidsize,"TwelveByte")) {
-                    auction = new TwelveByteTokenNFTAuction(_token,_amount,_bidToken,_endTime,_extendBlocks,_fixedIncrement,_fractionalIncrement,_reservePrice,expectedSupply(),msg.sender);
+                    auction = new TwelveByteTokenNFTAuction(_token,_amount,_bidToken,_endTime,_extendBlocks,_fixedIncrement,_fractionalIncrement,_reservePrice,expectedSupply(),msg.sender,fractionalCut);
                 } else if (eqstr(bidsize,"Word")) {
-                    auction = new WordTokenNFTAuction(_token,_amount,_bidToken,_endTime,_extendBlocks,_fixedIncrement,_fractionalIncrement,_reservePrice,expectedSupply(),msg.sender);
+                    auction = new WordTokenNFTAuction(_token,_amount,_bidToken,_endTime,_extendBlocks,_fixedIncrement,_fractionalIncrement,_reservePrice,expectedSupply(),msg.sender,fractionalCut);
                 }
             }
         }
@@ -98,8 +100,9 @@ contract TwelveByteTokenTokenAuction is TwelveByteBidAuction, TokenBidAuction, T
         uint24 _fractionalIncrement,
         uint _reservePrice,
         uint _expectedSupply,
-        address _beneficiary
-    ) public TokenAuction(_token, _amount) TokenBidAuction(_bidToken) Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement, _reservePrice, _beneficiary, this)
+        address _beneficiary,
+        uint _fractionalCut
+    ) public TokenAuction(_token, _amount) TokenBidAuction(_bidToken) Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement, _reservePrice, _beneficiary, _fractionalCut, this)
     {
         require(_bidToken != _token);
     }
@@ -117,8 +120,9 @@ contract WordTokenTokenAuction is WordBidAuction, TokenBidAuction, TokenAuction 
         uint24 _fractionalIncrement,
         uint _reservePrice,
         uint _expectedSupply,
-        address _beneficiary
-    ) public TokenAuction(_token, _amount) TokenBidAuction(_bidToken) Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement, _reservePrice, _beneficiary, this)
+        address _beneficiary,
+        uint _fractionalCut
+    ) public TokenAuction(_token, _amount) TokenBidAuction(_bidToken) Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement, _reservePrice, _beneficiary, _fractionalCut, this)
     {
         require(_bidToken != _token);
     }
@@ -136,8 +140,9 @@ contract TwelveByteTokenNFTAuction is TwelveByteBidAuction, TokenBidAuction, NFT
         uint24 _fractionalIncrement,
         uint _reservePrice,
         uint _expectedSupply,
-        address _beneficiary
-    ) public NFTAuction(_assetRegistry, _assetId) TokenBidAuction(_bidToken) Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement, _reservePrice, _beneficiary, this)
+        address _beneficiary,
+        uint _fractionalCut
+    ) public NFTAuction(_assetRegistry, _assetId) TokenBidAuction(_bidToken) Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement, _reservePrice, _beneficiary, _fractionalCut, this)
     {
     }
 }
@@ -154,8 +159,9 @@ contract WordTokenNFTAuction is WordBidAuction, TokenBidAuction, NFTAuction {
         uint24 _fractionalIncrement,
         uint _reservePrice,
         uint _expectedSupply,
-        address _beneficiary
-    ) public NFTAuction(_assetRegistry, _assetId) TokenBidAuction(_bidToken) Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement, _reservePrice, _beneficiary, this)
+        address _beneficiary,
+        uint _fractionalCut
+    ) public NFTAuction(_assetRegistry, _assetId) TokenBidAuction(_bidToken) Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement, _reservePrice, _beneficiary, _fractionalCut, this)
     {
     }
 }
@@ -172,8 +178,9 @@ contract TwelveByteEtherTokenAuction is TwelveByteBidAuction, EtherBidAuction, T
         uint24 _fractionalIncrement,
         uint _reservePrice,
         uint _expectedSupply,
-        address _beneficiary
-    ) public TokenAuction(_token, _amount) EtherBidAuction(_expectedSupply) Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement, _reservePrice, _beneficiary, this)
+        address _beneficiary,
+        uint _fractionalCut
+    ) public TokenAuction(_token, _amount) EtherBidAuction(_expectedSupply) Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement, _reservePrice, _beneficiary, _fractionalCut, this)
     {
     }
 }
@@ -190,8 +197,9 @@ contract WordEtherTokenAuction is WordBidAuction, EtherBidAuction, TokenAuction 
         uint24 _fractionalIncrement,
         uint _reservePrice,
         uint _expectedSupply,
-        address _beneficiary
-    ) public TokenAuction(_token, _amount) EtherBidAuction(_expectedSupply) Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement, _reservePrice, _beneficiary, this)
+        address _beneficiary,
+        uint _fractionalCut
+    ) public TokenAuction(_token, _amount) EtherBidAuction(_expectedSupply) Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement, _reservePrice, _beneficiary, _fractionalCut, this)
     {
     }
 }
@@ -208,8 +216,9 @@ contract TwelveByteEtherNFTAuction is TwelveByteBidAuction, EtherBidAuction, NFT
         uint24 _fractionalIncrement,
         uint _reservePrice,
         uint _expectedSupply,
-        address _beneficiary
-       ) public NFTAuction(_assetRegistry, _assetId) EtherBidAuction(_expectedSupply) Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement, _reservePrice, _beneficiary, this)
+        address _beneficiary,
+        uint _fractionalCut
+       ) public NFTAuction(_assetRegistry, _assetId) EtherBidAuction(_expectedSupply) Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement, _reservePrice, _beneficiary, _fractionalCut, this)
     { }
 }
 
@@ -225,7 +234,8 @@ contract WordEtherNFTAuction is WordBidAuction, EtherBidAuction, NFTAuction {
         uint24 _fractionalIncrement,
         uint _reservePrice,
         uint _expectedSupply,
-        address _beneficiary
-       ) public NFTAuction(_assetRegistry, _assetId) EtherBidAuction(_expectedSupply) Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement, _reservePrice, _beneficiary, this)
+        address _beneficiary,
+        uint _fractionalCut
+       ) public NFTAuction(_assetRegistry, _assetId) EtherBidAuction(_expectedSupply) Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement, _reservePrice, _beneficiary, _fractionalCut, this)
     { }
 }

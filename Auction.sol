@@ -13,6 +13,7 @@ import "./interfaces/EIP821/IAssetHolder.sol";
 contract Auction is IAuctionStatus, IBid, EIP820, ITokenRecipient, IAssetHolder {
 
     uint public reservePrice;
+    uint public fractionalCut;
     address public beneficiary;
     address public factory;
     
@@ -30,6 +31,7 @@ contract Auction is IAuctionStatus, IBid, EIP820, ITokenRecipient, IAssetHolder 
         uint24 _fractionalIncrement,
         uint256 _reservePrice,
         address _beneficiary,
+        uint _fractionalCut,
         address _factory
     ) public
     {
@@ -39,6 +41,7 @@ contract Auction is IAuctionStatus, IBid, EIP820, ITokenRecipient, IAssetHolder 
         setFractionalIncrement(_fractionalIncrement);
         reservePrice = _reservePrice;
         beneficiary = _beneficiary;
+        fractionalCut = _fractionalCut;
         factory = _factory;
 
         setInterfaceImplementation("ITokenRecipient", this);
@@ -111,10 +114,15 @@ contract Auction is IAuctionStatus, IBid, EIP820, ITokenRecipient, IAssetHolder 
 
         finalized = true;
         AuctionFinalized(highestBidder(), highestBid());
-        
+
+        uint cut = 0;
+        if (fractionalCut != 0) {
+            cut = highestBid() / fractionalCut;
+        }
 
         if (highestBid() >= reservePrice) {
-            untrustedTransferBid(beneficiary, highestBid());
+            untrustedTransferBid(factory, cut);
+            untrustedTransferBid(beneficiary, highestBid()-cut);
             untrustedTransferItem(highestBidder());
         } else {
             untrustedTransferBid(highestBidder(), highestBid());
