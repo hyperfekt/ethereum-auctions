@@ -14,6 +14,7 @@ contract Auction is IAuctionStatus, IBid, EIP820, ITokenRecipient, IAssetHolder 
 
     uint public reservePrice;
     address public beneficiary;
+    address public factory;
     
     mapping(address => uint256) public pendingReturns;
     bool public finalized;
@@ -27,7 +28,9 @@ contract Auction is IAuctionStatus, IBid, EIP820, ITokenRecipient, IAssetHolder 
         uint32 _extendBlocks,
         uint256 _fixedIncrement,
         uint24 _fractionalIncrement,
-        uint256 _reservePrice
+        uint256 _reservePrice,
+        address _beneficiary,
+        address _factory
     ) public
     {
         setAuctionEnd(_endTime);
@@ -35,7 +38,8 @@ contract Auction is IAuctionStatus, IBid, EIP820, ITokenRecipient, IAssetHolder 
         setFixedIncrement(_fixedIncrement);
         setFractionalIncrement(_fractionalIncrement);
         reservePrice = _reservePrice;
-        beneficiary = msg.sender;
+        beneficiary = _beneficiary;
+        factory = _factory;
 
         setInterfaceImplementation("ITokenRecipient", this);
     }

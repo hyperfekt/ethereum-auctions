@@ -34,6 +34,4 @@ contract TokenBidAuction is Auction {
     function bidToken() internal view returns (ERC20Interface) {
         return _bidToken;
     }
-
-    function maximumTokenSupply() public pure returns (uint);
 }

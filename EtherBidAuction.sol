@@ -1,8 +1,12 @@
 pragma solidity ^0.4.18;
 
-import "./TwelveByteBidAuction.sol";
+import "./Auction.sol";
 
-contract EtherBidAuction is TwelveByteBidAuction {
+contract EtherBidAuction is Auction {
+
+    function EtherBidAuction(uint _etherSupply) public {
+        require(_etherSupply <= maximumTokenSupply());
+    }
 
     function increaseBid() external payable {
         registerBid(msg.sender, msg.value);
