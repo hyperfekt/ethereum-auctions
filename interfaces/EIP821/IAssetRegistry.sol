@@ -7,8 +7,8 @@ interface IAssetRegistry {
   function totalSupply() public view returns (uint256);
 
   function exists(uint256 assetId) public view returns (bool);
-  function holderOf(uint256 assetId) public view returns (address);
-  function safeHolderOf(uint256 assetId) public view returns (address);
+  function ownerOf(uint256 assetId) public view returns (address);
+  function ownerHolderOf(uint256 assetId) public view returns (address);
   function assetData(uint256 assetId) public view returns (string);
   function safeAssetData(uint256 assetId) public view returns (string);
 

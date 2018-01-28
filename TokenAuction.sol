@@ -1,19 +1,19 @@
 pragma solidity ^0.4.18;
 
-import "./interfaces/EIP179/ERC179Interface.sol";
+
 import "./Auction.sol";
 
 contract TokenAuction is Auction {
 
-    event AuctionStarted(ERC20Interface bidToken, ERC179Interface token, uint amount);
+    event AuctionStarted(address bidToken, ERC179Interface token, uint amount);
 
     ERC179Interface public auctionedToken;
     uint public auctionedAmount;
 
-    function TokenAuction(
+    function initToken(
         address _token,
         uint _amount
-    ) public
+    ) uninitialized external
     {
         auctionedToken = ERC179Interface(_token);
         auctionedAmount = _amount;
@@ -24,7 +24,7 @@ contract TokenAuction is Auction {
     }
 
     function funded() public view returns (bool) {
-        return auctionedToken.balanceOf(this) == auctionedAmount;
+        return auctionedToken.balanceOf(this) >= auctionedAmount;
     }
 
     function logStart() internal {
@@ -33,7 +33,7 @@ contract TokenAuction is Auction {
 
     function untrustedTransferExcessAuctioned(address receiver, address token, uint) internal returns (bool notAuctioned) {
         if (ERC179Interface(token) == auctionedToken) {
-            uint transferAmount = auctionedToken.balanceOf(this) - auctionedAmount;
+            uint transferAmount = auctionedToken.balanceOf(this);
             if (started()) {
                 transferAmount -= auctionedAmount;
             }
@@ -44,11 +44,7 @@ contract TokenAuction is Auction {
         }
     }
 
-    function incomingFunds(EIP777 token, uint amount) internal returns (bool accepted) {
-        if (token == EIP777(auctionedToken)) {
-            return amount == auctionedAmount;
-        } else {
-            return false;
-        }
+    function incomingFunds(address token, uint amount) internal returns (bool accepted) {
+        return token == address(auctionedToken) && amount + auctionedToken.balanceOf(this) == auctionedAmount;
     }
 }

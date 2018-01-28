@@ -4,7 +4,6 @@ pragma solidity ^0.4.18;
 
 import "./interfaces/EIP179/ERC179Interface.sol";
 
-
 contract SingleToken is ERC179Interface {
     address public owner;
     

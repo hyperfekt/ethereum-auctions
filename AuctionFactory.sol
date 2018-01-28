@@ -1,249 +1,41 @@
 pragma solidity ^0.4.18;
 
-import "./Auction.sol";
-import "./NFTAuction.sol";
-import "./TokenAuction.sol";
-import "./TokenBidAuction.sol";
-import "./EtherBidAuction.sol";
-import "./WordBidAuction.sol";
-import "./TwelveByteBidAuction.sol";
 
 contract AuctionFactory {
-    uint secondsPerYear = 31557600;
-    uint version = 0;
-    uint currentEtherSupply;
-    uint fixedInflation;
-    uint fractionalCut;
+    mapping(address => string) auctions;
+    mapping(string => address) assemblyLines;
 
-    uint creationDate;
-    mapping(string => bool) optionOffered;
-    mapping(address => bool) product;
+    uint public fractionalCut = 0;
+    address public controller = 0x0;
 
-    function AuctionFactory(uint _currentEtherSupply, uint _fixedInflation, uint _fractionalCut,this) public {
-        currentEtherSupply = _currentEtherSupply;
-        fixedInflation = _fixedInflation;
+    modifier privileged {
+        require(msg.sender == controller);
+        _;
+    }
+
+    function setController(address _controller) privileged external {
+        controller = _controller;
+    }
+
+    function setCut(uint _fractionalCut) privileged external {
         fractionalCut = _fractionalCut;
-        creationDate = now;
     }
 
-    /// True for the first option, false for the second
-    function createAuction(
-        string bid, 
-        string item, 
-        string bidsize, 
-        uint40 _endTime,
-        uint32 _extendBlocks,
-        address _token,
-        uint _amount,
-        address _bidToken,
-        uint80 _fixedIncrement,
-        uint24 _fractionalIncrement,
-        uint _reservePrice
-        ) public returns (address)
-        {
-        address auction;
-        if (eqstr(bid,"Ether")) {
-            if (eqstr(item,"Token")) {
-                if (eqstr(bidsize,"TwelveByte")) {
-                    auction = new TwelveByteEtherTokenAuction(_token,_amount,_bidToken,_endTime,_extendBlocks,_fixedIncrement,_fractionalIncrement,_reservePrice,expectedSupply(),msg.sender,fractionalCut,this);
-                } else if (eqstr(bidsize,"Word")) {
-                    auction = new WordEtherTokenAuction(_token,_amount,_bidToken,_endTime,_extendBlocks,_fixedIncrement,_fractionalIncrement,_reservePrice,expectedSupply(),msg.sender,fractionalCut,this);
-                }
-            } else if (eqstr(item,"NFT")) {
-                if (eqstr(bidsize,"TwelveByte")) {
-                    auction = new TwelveByteEtherNFTAuction(_token,_amount,_bidToken,_endTime,_extendBlocks,_fixedIncrement,_fractionalIncrement,_reservePrice,expectedSupply(),msg.sender,fractionalCut,this);
-                } else if (eqstr(bidsize,"Word")) {
-                    auction = new WordEtherTokenAuction(_token,_amount,_bidToken,_endTime,_extendBlocks,_fixedIncrement,_fractionalIncrement,_reservePrice,expectedSupply(),msg.sender,fractionalCut,this);
-                }
-            }
-        } else if (eqstr(bid,"Token")) {
-            if (eqstr(item,"Token")) {
-                if (eqstr(bidsize,"TwelveByte")) {
-                    auction = new TwelveByteTokenTokenAuction(_token,_amount,_bidToken,_endTime,_extendBlocks,_fixedIncrement,_fractionalIncrement,_reservePrice,expectedSupply(),msg.sender,fractionalCut,this);
-                } else if (eqstr(bidsize,"Word")) {
-                    auction = new WordTokenTokenAuction(_token,_amount,_bidToken,_endTime,_extendBlocks,_fixedIncrement,_fractionalIncrement,_reservePrice,expectedSupply(),msg.sender,fractionalCut,this);
-                }
-            } else if (eqstr(item,"NFT")) {
-                if (eqstr(bidsize,"TwelveByte")) {
-                    auction = new TwelveByteTokenNFTAuction(_token,_amount,_bidToken,_endTime,_extendBlocks,_fixedIncrement,_fractionalIncrement,_reservePrice,expectedSupply(),msg.sender,fractionalCut,this);
-                } else if (eqstr(bidsize,"Word")) {
-                    auction = new WordTokenNFTAuction(_token,_amount,_bidToken,_endTime,_extendBlocks,_fixedIncrement,_fractionalIncrement,_reservePrice,expectedSupply(),msg.sender,fractionalCut,this);
-                }
-            }
-        }
-        product[auction] = true;
-        return auction;
+    function getAssemblyLine(string _identifier) public view returns (address) {
+        return assemblyLines[_identifier];
     }
 
-    function expectedSupply() public view returns (uint) {
-        return currentEtherSupply + (now-creationDate)/secondsPerYear*fixedInflation;
+    function addAssemblyLine(string _identifier, address _address) privileged external {
+        require(assemblyLines[_identifier] == 0x0);
+        assemblyLines[_identifier] = _address;
     }
 
-    function isProduct(address auction) public view returns (bool) {
-        return product[auction];
+    function registerAuction(string _identifier, address _address) external {
+        require(msg.sender == assemblyLines[_identifier]);
+        auctions[_address] = _identifier;
     }
 
-    function eqstr(string a, string b) public pure returns (bool) {
-        return keccak256(a) == keccak256(b);
+    function getIdentifier(address _auction) public view returns (string) {
+        return auctions[_auction];
     }
-}
-
-contract TwelveByteTokenTokenAuction is TwelveByteBidAuction, TokenBidAuction, TokenAuction {
-    /// Prepare an auction for `_amount` of the token at `_token` in exchange for the ERC20 token at `_token` in minimum increments of `_fixedIncrement` or current bid / `_fractionalIncrement`, whichever is greater, ending at epoch `_endTime` or `_extendBlocks` blocks after the last bid (both inclusive, whichever comes last, choose a sufficient number of blocks to decrease the chance of miner frontrunning) . Call start() after transferring the asset to the auction's address.
-    function TwelveByteTokenTokenAuction(
-        address _token,
-        uint _amount,
-        address _bidToken,
-        uint40 _endTime,
-        uint32 _extendBlocks,
-        uint80 _fixedIncrement,
-        uint24 _fractionalIncrement,
-        uint _reservePrice,
-        uint _expectedSupply,
-        address _beneficiary,
-        uint _fractionalCut,
-        address _factory
-    ) public TwelveByteBidAuction() TokenAuction(_token, _amount) TokenBidAuction(_bidToken) Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement, _reservePrice, _beneficiary, _fractionalCut, _factory)
-    {
-        require(_bidToken != _token);
-    }
-}
-
-contract WordTokenTokenAuction is WordBidAuction, TokenBidAuction, TokenAuction {
-    /// Prepare an auction for `_amount` of the token at `_token` in exchange for the ERC20 token at `_token` in minimum increments of `_fixedIncrement` or current bid / `_fractionalIncrement`, whichever is greater, ending at epoch `_endTime` or `_extendBlocks` blocks after the last bid (both inclusive, whichever comes last, choose a sufficient number of blocks to decrease the chance of miner frontrunning) . Call start() after transferring the asset to the auction's address.
-    function WordTokenTokenAuction(
-        address _token,
-        uint _amount,
-        address _bidToken,
-        uint40 _endTime,
-        uint32 _extendBlocks,
-        uint80 _fixedIncrement,
-        uint24 _fractionalIncrement,
-        uint _reservePrice,
-        uint _expectedSupply,
-        address _beneficiary,
-        uint _fractionalCut,
-        address _factory
-    ) public WordBidAuction() TokenAuction(_token, _amount) TokenBidAuction(_bidToken) Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement, _reservePrice, _beneficiary, _fractionalCut, _factory)
-    {
-        require(_bidToken != _token);
-    }
-}
-
-contract TwelveByteTokenNFTAuction is TwelveByteBidAuction, TokenBidAuction, NFTAuction {
-    /// Prepare an auction for asset with ID `_assetId` on the registry at `_assetRegistry` in exchange for the ERC20 token at `_bidToken` in minimum increments of `_fixedIncrement` or current bid / `_fractionalIncrement`, whichever is greater, ending at epoch `_endTime` or `_extendBlocks` blocks after the last bid (both inclusive, whichever comes last, choose a sufficient number of blocks to decrease the chance of miner frontrunning) . Call start() after transferring the asset to the auction's address.
-    function TwelveByteTokenNFTAuction(
-        address _assetRegistry,
-        uint256 _assetId,
-        address _bidToken,
-        uint40 _endTime,
-        uint32 _extendBlocks,
-        uint80 _fixedIncrement,
-        uint24 _fractionalIncrement,
-        uint _reservePrice,
-        uint _expectedSupply,
-        address _beneficiary,
-        uint _fractionalCut,
-        address _factory
-    ) public TwelveByteBidAuction() NFTAuction(_assetRegistry, _assetId) TokenBidAuction(_bidToken) Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement, _reservePrice, _beneficiary, _fractionalCut, _factory)
-    {
-    }
-}
-
-contract WordTokenNFTAuction is WordBidAuction, TokenBidAuction, NFTAuction {
-    /// Prepare an auction for asset with ID `_assetId` on the registry at `_assetRegistry` in exchange for the ERC20 token at `_bidToken` in minimum increments of `_fixedIncrement` or current bid / `_fractionalIncrement`, whichever is greater, ending at epoch `_endTime` or `_extendBlocks` blocks after the last bid (both inclusive, whichever comes last, choose a sufficient number of blocks to decrease the chance of miner frontrunning) . Call start() after transferring the asset to the auction's address.
-    function WordTokenNFTAuction(
-        address _assetRegistry,
-        uint256 _assetId,
-        address _bidToken,
-        uint40 _endTime,
-        uint32 _extendBlocks,
-        uint80 _fixedIncrement,
-        uint24 _fractionalIncrement,
-        uint _reservePrice,
-        uint _expectedSupply,
-        address _beneficiary,
-        uint _fractionalCut,
-        address _factory
-    ) public WordBidAuction() NFTAuction(_assetRegistry, _assetId) TokenBidAuction(_bidToken) Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement, _reservePrice, _beneficiary, _fractionalCut, _factory)
-    {
-    }
-}
-
-contract TwelveByteEtherTokenAuction is TwelveByteBidAuction, EtherBidAuction, TokenAuction {
-    /// Prepare an auction for `_amount` of the token at `_token` in exchange for Ether in minimum increments of `_fixedIncrement` or current bid / `_fractionalIncrement`, whichever is greater, ending at epoch `_endTime` or `_extendBlocks` blocks after the last bid (both inclusive, whichever comes last, choose a sufficient number of blocks to decrease the chance of miner frontrunning) . Call start() after transferring the tokens to the auction's address.
-    function TwelveByteEtherTokenAuction(
-        address _token,
-        uint _amount,
-        address _bidToken,
-        uint40 _endTime,
-        uint32 _extendBlocks,
-        uint80 _fixedIncrement,
-        uint24 _fractionalIncrement,
-        uint _reservePrice,
-        uint _expectedSupply,
-        address _beneficiary,
-        uint _fractionalCut,
-        address _factory
-    ) public TwelveByteBidAuction() TokenAuction(_token, _amount) EtherBidAuction(_expectedSupply) Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement, _reservePrice, _beneficiary, _fractionalCut, _factory)
-    {
-    }
-}
-
-contract WordEtherTokenAuction is WordBidAuction, EtherBidAuction, TokenAuction {
-    /// Prepare an auction for `_amount` of the token at `_token` in exchange for Ether in minimum increments of `_fixedIncrement` or current bid / `_fractionalIncrement`, whichever is greater, ending at epoch `_endTime` or `_extendBlocks` blocks after the last bid (both inclusive, whichever comes last, choose a sufficient number of blocks to decrease the chance of miner frontrunning) . Call start() after transferring the tokens to the auction's address.
-    function WordEtherTokenAuction(
-        address _token,
-        uint _amount,
-        address _bidToken,
-        uint40 _endTime,
-        uint32 _extendBlocks,
-        uint80 _fixedIncrement,
-        uint24 _fractionalIncrement,
-        uint _reservePrice,
-        uint _expectedSupply,
-        address _beneficiary,
-        uint _fractionalCut,
-        address _factory
-    ) public WordBidAuction() TokenAuction(_token, _amount) EtherBidAuction(_expectedSupply) Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement, _reservePrice, _beneficiary, _fractionalCut, _factory)
-    {
-    }
-}
-
-contract TwelveByteEtherNFTAuction is TwelveByteBidAuction, EtherBidAuction, NFTAuction {
-    /// Prepare an auction for asset with ID `_assetId` on the registry at `_assetRegistry` in exchange for Ether in minimum increments of `_fixedIncrement` or current bid / `_fractionalIncrement`, whichever is greater, ending at epoch `_endTime` or `_extendBlocks` blocks after the last bid (both inclusive, whichever comes last, choose a sufficient number of blocks to decrease the chance of miner frontrunning) . Call start() after transferring the asset to the auction's address.
-    function TwelveByteEtherNFTAuction(
-        address _assetRegistry,
-        uint256 _assetId,
-        address _bidToken,
-        uint40 _endTime,
-        uint32 _extendBlocks,
-        uint80 _fixedIncrement,
-        uint24 _fractionalIncrement,
-        uint _reservePrice,
-        uint _expectedSupply,
-        address _beneficiary,
-        uint _fractionalCut,
-        address _factory
-       ) public TwelveByteBidAuction() NFTAuction(_assetRegistry, _assetId) EtherBidAuction(_expectedSupply) Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement, _reservePrice, _beneficiary, _fractionalCut, _factory)
-    { }
-}
-
-contract WordEtherNFTAuction is WordBidAuction, EtherBidAuction, NFTAuction {
-    /// Prepare an auction for asset with ID `_assetId` on the registry at `_assetRegistry` in exchange for Ether in minimum increments of `_fixedIncrement` or current bid / `_fractionalIncrement`, whichever is greater, ending at epoch `_endTime` or `_extendBlocks` blocks after the last bid (both inclusive, whichever comes last, choose a sufficient number of blocks to decrease the chance of miner frontrunning) . Call start() after transferring the asset to the auction's address.
-    function WordEtherNFTAuction(
-        address _assetRegistry,
-        uint256 _assetId,
-        address _bidToken,
-        uint40 _endTime,
-        uint32 _extendBlocks,
-        uint80 _fixedIncrement,
-        uint24 _fractionalIncrement,
-        uint _reservePrice,
-        uint _expectedSupply,
-        address _beneficiary,
-        uint _fractionalCut,
-        address _factory
-       ) public WordBidAuction() NFTAuction(_assetRegistry, _assetId) EtherBidAuction(_expectedSupply) Auction(_endTime, _extendBlocks, _fixedIncrement, _fractionalIncrement, _reservePrice, _beneficiary, _fractionalCut, _factory)
-    { }
 }

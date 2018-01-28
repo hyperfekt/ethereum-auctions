@@ -1,21 +1,19 @@
 pragma solidity ^0.4.18;
 
-import "./interfaces/EIP721+821/NFTRegistry.sol";
-import "./interfaces/EIP721/ERC721.sol";
-import "./interfaces/EIP821/IAssetRegistry.sol";
 import "./Auction.sol";
+import "./interfaces/EIP821/IAssetHolder.sol";
 
-contract NFTAuction is Auction {
+contract NFTAuction is Auction, IAssetHolder {
 
-    event AuctionStarted(ERC20Interface bidToken, NFTRegistry token, uint asset);
+    event AuctionStarted(address bidToken, address token, uint asset);
 
     NFTRegistry public assetRegistry;
     uint256 public assetId;
 
-    function NFTAuction(
+    function initNFT(
         address _assetRegistry,
         uint256 _assetId
-    ) public
+    ) uninitialized external
     {
         assetRegistry = NFTRegistry(_assetRegistry);
         assetId = _assetId;
@@ -27,12 +25,7 @@ contract NFTAuction is Auction {
     }
 
     function funded() public view returns (bool) {
-        address registryImplementer = interfaceAddr(assetRegistry, "IAssetRegistry");
-        if (registryImplementer != 0) {
-            return this == IAssetRegistry(registryImplementer).holderOf(assetId);
-        } else {
-            return this == ERC721(assetRegistry).ownerOf(assetId);
-        }
+        return assetRegistry.ownerOf(assetId) == address(this);
     }
 
     function logStart() internal {
