@@ -1,14 +1,12 @@
 pragma solidity ^0.4.18;
 
-import "./IBid.sol";
 import "./IAuctionStatus.sol";
-import "./Auction.sol";
 
-contract WordBidAuction is Auction {
+contract TwelveByteBid is IAuctionStatus {
 
     struct Bid {
         address bidder;
-        uint256 amount;
+        uint96 amount;
     }
 
     struct AuctionStatus {
@@ -17,16 +15,17 @@ contract WordBidAuction is Auction {
         uint32 endExtension; // note that miners can choose to exclude transactions and insert their own, meaning that they can could limit the price and place winning bids by colluding with this many successive other miners.
         uint24 fractionalIncrement;
         bool started;
-        bool selfInitiatedTransfer;
-        uint256 fixedIncrement;
+        bool activeWithdrawal;
+        uint96 fixedIncrement;
     }
 
     Bid internal maximumBid;
     AuctionStatus internal status;
 
+
     function setHighestBid(address bidder, uint256 amount) internal {
         maximumBid.bidder = bidder;
-        maximumBid.amount = amount;
+        maximumBid.amount = uint96(amount);
     }
 
     function highestBidder() public view returns (address) {
@@ -37,8 +36,8 @@ contract WordBidAuction is Auction {
         return maximumBid.amount;
     }
 
-    function maximumTokenSupply() public pure returns (uint) {
-        return 2^256-1;
+    function maximumTokenSupply() internal pure returns (uint) {
+        return 2^96-1;
     }
     
     function endBlock() public view returns (uint40) {
@@ -59,8 +58,8 @@ contract WordBidAuction is Auction {
     function started() public view returns (bool) {
         return status.started;
     }
-    function selfInitiatedTransfer() internal view returns (bool) {
-        return status.selfInitiatedTransfer;
+    function activeWithdrawal() internal view returns (bool) {
+        return status.activeWithdrawal;
     }
     
     function setEndBlock(uint40 set) internal {
@@ -73,7 +72,7 @@ contract WordBidAuction is Auction {
         status.endExtension = set;
     }
     function setFixedIncrement(uint set) internal {
-        status.fixedIncrement = set;
+        status.fixedIncrement = uint96(set);
     }
     function setFractionalIncrement(uint24 set) internal {
         status.fractionalIncrement = set;
@@ -81,7 +80,7 @@ contract WordBidAuction is Auction {
     function setStarted(bool set) internal {
         status.started = set;
     }
-    function setSelfInitiatedTransfer(bool set) internal {
-        status.selfInitiatedTransfer = set;
+    function setActiveWithdrawal(bool set) internal {
+        status.activeWithdrawal = set;
     }
 }
